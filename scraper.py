@@ -32,7 +32,7 @@ class ElectricityMeterScraper:
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-blink-features=AutomationControlled")
-        options.add_argument("--headless")  # Required for Railway
+        options.add_argument("--headless=new")  # Use new headless mode
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-extensions")
@@ -46,7 +46,25 @@ class ElectricityMeterScraper:
         options.add_argument("--disable-ipc-flooding-protection")
         options.add_argument("--no-first-run")
         options.add_argument("--no-default-browser-check")
+        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-logging")
+        options.add_argument("--disable-dev-tools")
+        options.add_argument("--memory-pressure-off")
+        options.add_argument("--max_old_space_size=4096")
+        
+        # Docker/Container specific options
         options.add_argument("--single-process")
+        options.add_argument("--no-zygote")
+        options.add_argument("--disable-background-networking")
+        options.add_argument("--disable-default-apps")
+        options.add_argument("--disable-sync")
+        options.add_argument("--disable-translate")
+        options.add_argument("--hide-scrollbars")
+        options.add_argument("--metrics-recording-only")
+        options.add_argument("--mute-audio")
+        options.add_argument("--no-first-run")
+        options.add_argument("--safebrowsing-disable-auto-update")
+        options.add_argument("--disable-component-update")
         
         # SSL bypass options for websites with certificate issues
         options.add_argument("--ignore-ssl-errors=yes")
@@ -54,20 +72,33 @@ class ElectricityMeterScraper:
         options.add_argument("--allow-running-insecure-content")
         options.add_argument("--disable-web-security")
         options.add_argument("--ignore-ssl-errors-spki-list")
+        options.add_argument("--ignore-certificate-errors-spki-list")
         
         # Anti-detection options
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
+        options.add_experimental_option("detach", True)
         
-        # Railway/Docker - use installed Chrome and ChromeDriver
+        # User agent to avoid detection
+        options.add_argument("--user-agent=Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36")
+        
+        # Railway/Docker - use installed Chrome and ChromeDriver  
         try:
+            print("Setting up Chrome WebDriver for Railway deployment...")
             # Use chromedriver from system installation
             service = Service('/usr/local/bin/chromedriver')
             self.driver = webdriver.Chrome(service=service, options=options)
+            print("✅ Chrome WebDriver initialized successfully")
         except Exception as e:
-            print(f"Error setting up Chrome driver: {e}")
+            print(f"❌ Error setting up Chrome driver: {e}")
+            print("Attempting fallback configuration...")
             # Fallback: try without explicit service path
-            self.driver = webdriver.Chrome(options=options)
+            try:
+                self.driver = webdriver.Chrome(options=options)
+                print("✅ Chrome WebDriver fallback successful")
+            except Exception as e2:
+                print(f"❌ Fallback also failed: {e2}")
+                raise e2
         
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         return True

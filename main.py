@@ -87,6 +87,28 @@ def main():
     
     # Check if running in test mode
     test_run = os.getenv('TEST_RUN', 'false').lower() == 'true'
+    debug_chrome = os.getenv('DEBUG_CHROME', 'false').lower() == 'true'
+    
+    if debug_chrome:
+        logging.info("🔍 DEBUG MODE: Testing Chrome setup only...")
+        try:
+            from scraper import ElectricityMeterScraper
+            scraper = ElectricityMeterScraper()
+            logging.info("Testing Chrome WebDriver setup...")
+            success = scraper.setup_driver()
+            if success and scraper.driver:
+                logging.info("✅ Chrome setup successful! Testing basic navigation...")
+                scraper.driver.get("https://www.google.com")
+                logging.info(f"✅ Navigation successful! Page title: {scraper.driver.title}")
+                scraper.driver.quit()
+                logging.info("✅ Chrome debug test completed successfully!")
+            else:
+                logging.error("❌ Chrome setup failed")
+        except Exception as e:
+            logging.error(f"❌ Chrome debug test failed: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
+        return
     
     if test_run:
         logging.info("🧪 TEST MODE: Running single scraping cycle...")
@@ -95,6 +117,8 @@ def main():
             logging.info("✅ Test run completed successfully!")
         except Exception as e:
             logging.error(f"❌ Test run failed: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
             sys.exit(1)
     else:
         logging.info("📅 PRODUCTION MODE: Starting scheduled monitoring...")
@@ -103,6 +127,8 @@ def main():
             scheduler.start_scheduler()
         except Exception as e:
             logging.error(f"❌ Scheduler failed: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
             # Railway will automatically restart the service
             sys.exit(1)
 
