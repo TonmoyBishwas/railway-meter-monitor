@@ -34,13 +34,15 @@ RUN wget -q --no-check-certificate -O /tmp/chrome.deb https://dl.google.com/linu
     && rm -f /tmp/chrome.deb \
     && rm -rf /var/lib/apt/lists/*
 
-# Install ChromeDriver (fixed stable version)
-RUN wget -q --no-check-certificate -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.87/linux64/chromedriver-linux64.zip" \
+# Install matching ChromeDriver for the installed Chrome version
+RUN CHROME_VERSION=$(google-chrome --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+') \
+    && echo "Detected Chrome version: $CHROME_VERSION" \
+    && wget -q --no-check-certificate -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
     && unzip /tmp/chromedriver.zip -d /tmp/ \
     && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver \
     && rm -rf /tmp/chromedriver.zip /tmp/chromedriver-linux64 \
-    && echo "ChromeDriver installed successfully"
+    && echo "ChromeDriver ${CHROME_VERSION} installed successfully to match Chrome ${CHROME_VERSION}"
 
 # Set work directory
 WORKDIR /app
