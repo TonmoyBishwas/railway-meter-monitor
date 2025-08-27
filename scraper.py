@@ -59,15 +59,17 @@ class ElectricityMeterScraper:
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
         
-        # Railway/Docker - use system chromedriver
+        # Railway/Docker - use Chrome for Testing binaries
         try:
-            # Try using chromedriver from PATH (installed in Docker)
-            self.driver = webdriver.Chrome(options=options)
-        except Exception as e:
-            print(f"Error setting up Chrome driver: {e}")
-            # Fallback: try with explicit service path
+            # Set Chrome binary location for Chrome for Testing
+            options.binary_location = '/usr/local/bin/chrome'
+            # Use chromedriver from PATH (installed in Docker)
             service = Service('/usr/local/bin/chromedriver')
             self.driver = webdriver.Chrome(service=service, options=options)
+        except Exception as e:
+            print(f"Error setting up Chrome driver: {e}")
+            # Fallback: try without explicit paths (system defaults)
+            self.driver = webdriver.Chrome(options=options)
         
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         return True
