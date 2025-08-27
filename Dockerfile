@@ -1,4 +1,4 @@
-# Use Python 3.12 as base image
+# Use Python 3.12 as base image  
 FROM python:3.12-slim
 
 # Set environment variables
@@ -6,27 +6,41 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install system dependencies including Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     unzip \
     curl \
     xvfb \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Chrome for Testing (more reliable method)
-RUN curl -fsSL https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json | \
-    grep -oE '"version":"[^"]*' | head -1 | cut -d'"' -f4 > /tmp/chrome_version.txt \
-    && CHROME_VERSION=$(cat /tmp/chrome_version.txt) \
-    && wget -O /tmp/chrome-linux64.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" \
-    && wget -O /tmp/chromedriver-linux64.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chromedriver-linux64.zip" \
-    && unzip /tmp/chrome-linux64.zip -d /opt/ \
-    && unzip /tmp/chromedriver-linux64.zip -d /opt/ \
-    && ln -sf /opt/chrome-linux64/chrome /usr/local/bin/chrome \
-    && ln -sf /opt/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-    && chmod +x /usr/local/bin/chrome /usr/local/bin/chromedriver \
-    && rm -f /tmp/chrome-linux64.zip /tmp/chromedriver-linux64.zip /tmp/chrome_version.txt
+# Install Google Chrome using direct download (most reliable method)
+RUN wget -q --no-check-certificate -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt-get update \
+    && apt-get install -y /tmp/chrome.deb \
+    && rm -f /tmp/chrome.deb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install matching ChromeDriver
+RUN CHROME_VERSION=$(google-chrome --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+') \
+    && CHROME_MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d. -f1) \
+    && wget -q --no-check-certificate -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_MAJOR_VERSION}/chromedriver_linux64.zip" \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+    && chmod +x /usr/local/bin/chromedriver \
+    && rm -f /tmp/chromedriver.zip
 
 # Set work directory
 WORKDIR /app
